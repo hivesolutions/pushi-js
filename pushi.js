@@ -164,6 +164,10 @@ Pushi.prototype.open = function(callback) {
         return;
     }
 
+    // updates the current state to the connecting value as the process
+    // of connecting the current "socket" is now starting
+    this.state = "connecting";
+
     // retrieves the current context as a local variable and then tries
     // to gather the subscriptions from the current socket defaulting to
     // a simple list with the current instance otherwise, this will make
@@ -196,7 +200,7 @@ Pushi.prototype.open = function(callback) {
         var message = event.data;
         var json = JSON.parse(message);
 
-        var isConnected = self.state == "disconnected"
+        var isConnected = self.state == "connecting"
                 && json.event == "pusher:connection_established";
 
         if (isConnected) {
@@ -224,6 +228,10 @@ Pushi.prototype.close = function(callback) {
     if (this.state != "connected") {
         return;
     }
+
+    // updates the current state to the disconnecting value as the process
+    // of disconnecting the current "socket" is now starting
+    this.state = "disconnecting";
 
     // updates the next operation callback reference in the socket to the
     // provided callback so that it gets notified on closing
