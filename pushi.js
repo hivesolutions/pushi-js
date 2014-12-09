@@ -55,7 +55,7 @@ var Pushi = function(appKey, options) {
     this.init(appKey, options);
 };
 
-Pushi.prototype.init = function(appKey, options) {
+Pushi.prototype.init = function(appKey, options, callback) {
     // tries to retrieve any previously existing instance
     // of pushi for the provided key and in case it exists
     // clones it and returns it as the properly initialized
@@ -87,7 +87,7 @@ Pushi.prototype.init = function(appKey, options) {
 
     // triggers the starts of the connection loading by calling
     // the open (connection) method in the instance
-    this.open();
+    this.open(callback);
 };
 
 Pushi.prototype.config = function(appKey, options) {
@@ -164,10 +164,6 @@ Pushi.prototype.open = function(callback) {
         return;
     }
 
-    // updates the current state to the connecting value as the process
-    // of connecting the current "socket" is now starting
-    this.state = "connecting";
-
     // retrieves the current context as a local variable and then tries
     // to gather the subscriptions from the current socket defaulting to
     // a simple list with the current instance otherwise, this will make
@@ -228,10 +224,6 @@ Pushi.prototype.close = function(callback) {
     if (this.state != "connected") {
         return;
     }
-
-    // updates the current state to the disconnecting value as the process
-    // of disconnecting the current "socket" is now starting
-    this.state = "disconnecting";
 
     // updates the next operation callback reference in the socket to the
     // provided callback so that it gets notified on closing
