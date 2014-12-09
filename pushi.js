@@ -113,6 +113,9 @@ Pushi.prototype.clone = function(base) {
 };
 
 Pushi.prototype.init = function() {
+    // retrieves the current context as a local variable and then tries
+    // to gather the subscriptions from the current socket defaulting to
+    // a simple list with the current instance otherwise
     var self = this;
     var subscriptions = this.socket ? this.socket.subscriptions : [this];
 
@@ -123,7 +126,7 @@ Pushi.prototype.init = function() {
 
     // creates the function that will initialize the instance's socket to
     // the one that has now been created and then calls it to all the
-    // subscriptor of the current socket
+    // subscriptions of the current socket (sets socket for subscription)
     var _init = function() {
         this.socket = socket;
     };
@@ -151,6 +154,10 @@ Pushi.prototype.init = function() {
     this.socket.onclose = function() {
         self.callobj(Pushi.prototype.onodisconnect, this.subscriptions);
     };
+};
+
+Pushi.prototype.close = function() {
+    this.socket.close();
 };
 
 Pushi.prototype.callobj = function(callable, objects) {
