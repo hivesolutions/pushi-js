@@ -52,23 +52,27 @@ Channel.prototype.trigger = function(event, data) {
 };
 
 var Pushi = function(appKey, options) {
-    var TIMEOUT = 5000;
-    var BASE_URL = "wss://puxiapp.com/";
+    this.init(appKey, options);
+};
 
-    var timeout = options.timeout || TIMEOUT;
-    var baseURL = options.baseUrl || BASE_URL;
-
+Pushi.prototype.init = function(appKey, options) {
+    // tries to retrieve any previously existing instance
+    // of pushi for the provided key and in case it exists
+    // clones it and returns it as the properly initialized
+    // pushi instance (provides re-usage of resources)
     var previous = PUSHI_CONNECTIONS[appKey];
     if (previous) {
         return this.clone(previous);
     }
 
-    this.socket = null;
-    this.timeout = timeout;
-    this.url = baseURL + appKey;
+    // runs the configuration operation for the current instance
+    // so that the state based configuration variables are set
+    // according to the provided (configuration) values
+    this.config(appKey, options);
 
-    this.appKey = appKey;
-    this.options = options || {};
+    // starts the various state related variables for
+    // the newly initialized pushi instance
+    this.socket = null;
     this.socketId = null;
     this.state = "disconnected";
     this.channels = {};
@@ -77,16 +81,43 @@ var Pushi = function(appKey, options) {
     this._base = null;
     this._cloned = false;
 
+    // updates the proper auth endpoint for the current
+    // instance so that the proper call is made if required
     this.authEndpoint = this.options.authEndpoint;
 
+    // sets the current connection for the app key value
+    // so that it gets re-used if that's requested
     PUSHI_CONNECTIONS[appKey] = this;
 
-    this.init();
+    // triggers the starts of the connection loading by calling
+    // the open (connection) method in the instance
+    this.open();
+};
+
+Pushi.prototype.config = function(appKey, options) {
+    // runs the definition of a series of contant values that
+    // will be used as defaults for some options
+    var TIMEOUT = 5000;
+    var BASE_URL = "wss://puxiapp.com/";
+
+    // retrieves the proper values for the options, defaulting
+    // to the pre-defined (constant) values if that's required
+    var timeout = options.timeout || TIMEOUT;
+    var baseUrl = options.baseUrl || BASE_URL;
+
+    // updates the various configuration related variables
+    // that will condition the way the pushi instance behaves
+    this.timeout = timeout;
+    this.url = baseUrl + appKey;
+    this.baseUrl = baseUrl;
+    this.appKey = appKey;
+    this.options = options || {};
 };
 
 Pushi.prototype.clone = function(base) {
     this.timeout = base.timeout;
-    this.url = base.url
+    this.url = base.url;
+    this.baseUrl = base.baseUrl;
     this.appKey = base.appKey;
     this.options = base.options;
     this.socket = base.socket;
@@ -114,7 +145,7 @@ Pushi.prototype.clone = function(base) {
     }
 };
 
-Pushi.prototype.init = function(callback) {
+Pushi.prototype.open = function(callback) {
     // in case the current state is not disconnected returns immediately
     // as this is considered to be the only valid state for the operation
     if (this.state != "disconnected") {
@@ -175,12 +206,19 @@ Pushi.prototype.init = function(callback) {
     };
 };
 
-Pushi.prototype.open = function(callback) {
-    this.init(callback);
-};
-
 Pushi.prototype.close = function(callback) {
+    // in case the current state is not connected returns immediately
+    // as this is considered to be the only valid state for the operation
+    if (this.state != "connected") {
+        return;
+    }
+
+    // updates the next operation callback reference in the socket to the
+    // provided callback so that it gets notified on closing
     this.socket._callback = callback;
+
+    // closes the currently assigned socket, triggering a series of events
+    // that will update the current pushi status as disconnected
     this.socket.close();
 };
 
@@ -221,7 +259,7 @@ Pushi.prototype.retry = function() {
     // the server side nor to large that takes to long for
     // the reconnection to take effect (bad user experience)
     setTimeout(function() {
-                self.init();
+                self.open();
             }, this.timeout);
 };
 
