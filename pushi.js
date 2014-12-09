@@ -508,6 +508,10 @@ Pushi.prototype.subscribePrivate = function(channel) {
     request.send();
 };
 
+Pushi.prototype.isValid = function(appKey, baseUrl) {
+    return appKey == this.appKey && baseUrl == this.baseUrl;
+};
+
 if (typeof String.prototype.startsWith != "function") {
     String.prototype.startsWith = function(string) {
         return this.slice(0, string.length) == string;
