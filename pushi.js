@@ -118,6 +118,11 @@ Pushi.prototype.config = function(appKey, options) {
     PUSHI_CONNECTIONS[appKey] = this;
 };
 
+Pushi.prototype.reconfig = function(appKey, options, callback) {
+    pushi.config(appKey, options);
+    pushi.reopen(callback);
+};
+
 Pushi.prototype.clone = function(base) {
     // copies the complete set of attributes from the base
     // object to the new one (cloned) so that they may be
@@ -229,10 +234,10 @@ Pushi.prototype.close = function(callback) {
     this.socket.close();
 };
 
-Pushi.prototype.reopen = function() {
+Pushi.prototype.reopen = function(callback) {
     var self = this;
     this.close(function() {
-                self.open();
+                self.open(callback);
             });
 };
 
