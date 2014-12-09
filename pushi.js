@@ -119,8 +119,8 @@ Pushi.prototype.config = function(appKey, options) {
 };
 
 Pushi.prototype.reconfig = function(appKey, options, callback) {
-    pushi.config(appKey, options);
-    pushi.reopen(callback);
+    this.config(appKey, options);
+    this.reopen(callback);
 };
 
 Pushi.prototype.clone = function(base) {
