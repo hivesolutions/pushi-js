@@ -99,6 +99,8 @@ Pushi.prototype.clone = function(base) {
     this._base = base;
     this._cloned = true;
 
+    // adds the current reference to the list of subscriptions
+    // for the socket that is going to be used (as expected)
     this.socket.subscriptions.push(this);
 
     // in case the current state of the connection is
@@ -113,9 +115,17 @@ Pushi.prototype.clone = function(base) {
 };
 
 Pushi.prototype.init = function() {
+    // in case the current state is not disconnected returns immediately
+    // as this is considered to be the only valid state for the operation
+    if(this.state != "disconnected") {
+        return;
+    }
+
     // retrieves the current context as a local variable and then tries
     // to gather the subscriptions from the current socket defaulting to
-    // a simple list with the current instance otherwise
+    // a simple list with the current instance otherwise, this will make
+    // possible the re-usage of previously existing subscriptions for the
+    // instance for cloning situations (as defined in specifications)
     var self = this;
     var subscriptions = this.socket ? this.socket.subscriptions : [this];
 
@@ -154,6 +164,10 @@ Pushi.prototype.init = function() {
     this.socket.onclose = function() {
         self.callobj(Pushi.prototype.onodisconnect, this.subscriptions);
     };
+};
+
+Pushi.prototype.open = function() {
+    this.init();
 };
 
 Pushi.prototype.close = function() {
