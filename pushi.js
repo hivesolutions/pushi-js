@@ -119,6 +119,9 @@ Pushi.prototype.config = function(appKey, options) {
 };
 
 Pushi.prototype.clone = function(base) {
+    // copies the complete set of attributes from the base
+    // object to the new one (cloned) so that they may be
+    // re-used for any future operation/action
     this.timeout = base.timeout;
     this.url = base.url;
     this.baseUrl = base.baseUrl;
