@@ -114,10 +114,10 @@ Pushi.prototype.clone = function(base) {
     }
 };
 
-Pushi.prototype.init = function() {
+Pushi.prototype.init = function(callback) {
     // in case the current state is not disconnected returns immediately
     // as this is considered to be the only valid state for the operation
-    if(this.state != "disconnected") {
+    if (this.state != "disconnected") {
         return;
     }
 
@@ -130,9 +130,11 @@ Pushi.prototype.init = function() {
     var subscriptions = this.socket ? this.socket.subscriptions : [this];
 
     // creates the new websocket reference with the currently defined
-    // url and then updates the reference to the underlying subscriptions
+    // url, then updates the reference to the underlying subscriptions
+    // and sets the proper callback value for the socket operation
     var socket = new WebSocket(this.url);
     socket.subscriptions = subscriptions;
+    socket._callback = callback;
 
     // creates the function that will initialize the instance's socket to
     // the one that has now been created and then calls it to all the
@@ -143,6 +145,8 @@ Pushi.prototype.init = function() {
     this.callobj(_init, subscriptions);
 
     this.socket.onopen = function() {
+        this._callback && this._callback();
+        this._callback = null;
     };
 
     this.socket.onmessage = function(event) {
@@ -159,19 +163,32 @@ Pushi.prototype.init = function() {
             var data = json;
             self.callobj(Pushi.prototype.onmessage, this.subscriptions, data);
         }
+
+        this._callback && this._callback();
+        this._callback = null;
     };
 
     this.socket.onclose = function() {
         self.callobj(Pushi.prototype.onodisconnect, this.subscriptions);
+        this._callback && this._callback();
+        this._callback = null;
     };
 };
 
-Pushi.prototype.open = function() {
-    this.init();
+Pushi.prototype.open = function(callback) {
+    this.init(callback);
 };
 
-Pushi.prototype.close = function() {
+Pushi.prototype.close = function(callback) {
+    this.socket._callback = callback;
     this.socket.close();
+};
+
+Pushi.prototype.reopen = function() {
+    var self = this;
+    this.close(function() {
+                self.open();
+            });
 };
 
 Pushi.prototype.callobj = function(callable, objects) {
