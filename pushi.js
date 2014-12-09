@@ -196,7 +196,7 @@ Pushi.prototype.open = function(callback) {
         var message = event.data;
         var json = JSON.parse(message);
 
-        var isConnected = self.state == "connecting"
+        var isConnected = self.state == "disconnected"
                 && json.event == "pusher:connection_established";
 
         if (isConnected) {
