@@ -85,10 +85,6 @@ Pushi.prototype.init = function(appKey, options) {
     // instance so that the proper call is made if required
     this.authEndpoint = this.options.authEndpoint;
 
-    // sets the current connection for the app key value
-    // so that it gets re-used if that's requested
-    PUSHI_CONNECTIONS[appKey] = this;
-
     // triggers the starts of the connection loading by calling
     // the open (connection) method in the instance
     this.open();
@@ -105,6 +101,10 @@ Pushi.prototype.config = function(appKey, options) {
     var timeout = options.timeout || TIMEOUT;
     var baseUrl = options.baseUrl || BASE_URL;
 
+    // removes any previously registered configuration for the
+    // the current instance app key (for cases of re-configuration)
+    delete PUSHI_CONNECTIONS[this.appKey];
+
     // updates the various configuration related variables
     // that will condition the way the pushi instance behaves
     this.timeout = timeout;
@@ -112,6 +112,10 @@ Pushi.prototype.config = function(appKey, options) {
     this.baseUrl = baseUrl;
     this.appKey = appKey;
     this.options = options || {};
+
+    // sets the current connection for the app key value
+    // so that it gets re-used if that's requested
+    PUSHI_CONNECTIONS[appKey] = this;
 };
 
 Pushi.prototype.clone = function(base) {
