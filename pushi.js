@@ -356,19 +356,23 @@ Pushi.prototype.send = function(json) {
     this.socket.send(data);
 };
 
-Pushi.prototype.sendEvent = function(event, data) {
+Pushi.prototype.sendEvent = function(event, data, persist) {
+    persist = persist === undefined ? true : persist;
     var json = {
         event : event,
-        data : data
+        data : data,
+        persist : persist
     };
     this.send(json);
 };
 
-Pushi.prototype.sendChannel = function(event, data, channel) {
+Pushi.prototype.sendChannel = function(event, data, channel, persist) {
+    persist = persist === undefined ? true : persist;
     var json = {
         event : event,
         data : data,
-        channel : channel
+        channel : channel,
+        persist : persist
     };
     this.send(json);
 };
