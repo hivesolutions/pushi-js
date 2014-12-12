@@ -47,8 +47,8 @@ Channel.prototype.confirm = function(data) {
     this.subscribed = true;
 }
 
-Channel.prototype.trigger = function(event, data) {
-    this.pushi.sendChannel(event, data, this.name);
+Channel.prototype.send = function(event, data, persist) {
+    this.pushi.sendChannel(event, data, this.name, persist);
 };
 
 var Pushi = function(appKey, options) {
@@ -334,17 +334,17 @@ Pushi.prototype.onmessage = function(json) {
     switch (json.event) {
         case "pusher_internal:subscription_succeeded" :
             var data = JSON.parse(json.data);
-            this.onsubscribe(json.channel, data);
+            this.onsubscribe(channel, data);
             break;
 
         case "pusher:member_added" :
             var member = JSON.parse(json.member);
-            this.onmemberadded(json.channel, member);
+            this.onmemberadded(channel, member);
             break;
 
         case "pusher:member_removed" :
             var member = JSON.parse(json.member);
-            this.onmemberremoved(json.channel, member);
+            this.onmemberremoved(channel, member);
             break;
     }
 
