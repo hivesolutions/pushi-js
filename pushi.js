@@ -25,11 +25,36 @@
 
 var PUSHI_CONNECTIONS = {}
 
+var Observable = function() {
+    this.events = {};
+};
+
+Observable.prototype.trigger = function(event) {
+    var methods = this.events[event] || [];
+    for (var index = 0; index < methods.length; index++) {
+        var method = methods[index];
+        method.apply(this, arguments);
+    }
+};
+
+Observable.prototype.bind = function(event, method) {
+    var methods = this.events[event] || [];
+    methods.push(method);
+    this.events[event] = methods;
+};
+
+Observable.prototype.unbind = function(event, method) {
+    var methods = this.events[event] || [];
+    var index = methods.indexOf(method);
+    index && methods.splice(index, 1);
+};
+
 var Channel = function(pushi, name) {
     this.pushi = pushi;
     this.name = name;
     this.data = null;
     this.subscribed = false;
+    this.events = {};
 };
 
 Channel.prototype.confirm = function(data) {
@@ -45,11 +70,17 @@ Channel.prototype.confirm = function(data) {
 
     this.data = data;
     this.subscribed = true;
+
+    this.trigger("subscribe", data);
 }
 
 Channel.prototype.send = function(event, data, persist) {
     this.pushi.sendChannel(event, data, this.name, persist);
 };
+
+Channel.prototype.trigger = Observable.prototype.trigger;
+Channel.prototype.bind = Observable.prototype.bind;
+Channel.prototype.unbind = Observable.prototype.unbind;
 
 var Pushi = function(appKey, options) {
     this.init(appKey, options);
@@ -273,26 +304,6 @@ Pushi.prototype.retry = function() {
     setTimeout(function() {
                 self.open();
             }, this.timeout);
-};
-
-Pushi.prototype.trigger = function(event) {
-    var methods = this.events[event] || [];
-    for (var index = 0; index < methods.length; index++) {
-        var method = methods[index];
-        method.apply(this, arguments);
-    }
-};
-
-Pushi.prototype.bind = function(event, method) {
-    var methods = this.events[event] || [];
-    methods.push(method);
-    this.events[event] = methods;
-};
-
-Pushi.prototype.unbind = function(event, method) {
-    var methods = this.events[event] || [];
-    var index = methods.indexOf(method);
-    index && methods.splice(index, 1);
 };
 
 Pushi.prototype.onoconnect = function(data) {
@@ -520,6 +531,10 @@ Pushi.prototype.subscribePrivate = function(channel) {
 Pushi.prototype.isValid = function(appKey, baseUrl) {
     return appKey == this.appKey && baseUrl == this.baseUrl;
 };
+
+Pushi.prototype.trigger = Observable.prototype.trigger;
+Pushi.prototype.bind = Observable.prototype.bind;
+Pushi.prototype.unbind = Observable.prototype.unbind;
 
 if (typeof String.prototype.startsWith != "function") {
     String.prototype.startsWith = function(string) {
