@@ -30,14 +30,28 @@ var Observable = function() {
 };
 
 Observable.prototype.trigger = function(event) {
+    var oneshots = null;
     var methods = this.events[event] || [];
     for (var index = 0; index < methods.length; index++) {
         var method = methods[index];
         method.apply(this, arguments);
+        if (method.oneshot == false) {
+            continue
+        }
+        oneshots = oneshots == null ? [] : oneshots;
+        oneshots.push(method);
+    }
+    if (oneshots == null) {
+        return;
+    }
+    for (var index = 0; index < oneshots.length; index++) {
+        var oneshot = oneshots[index];
+        this.unbind(event, oneshot);
     }
 };
 
-Observable.prototype.bind = function(event, method) {
+Observable.prototype.bind = function(event, method, oneshot) {
+    method.oneshot = oneshot ? true : false;
     var methods = this.events[event] || [];
     methods.push(method);
     this.events[event] = methods;
@@ -57,7 +71,7 @@ var Channel = function(pushi, name) {
     this.events = {};
 };
 
-Channel.prototype.confirm = function(data) {
+Channel.prototype.setsubscribe = function(data) {
     var alias = (data && data.alias) || [];
     for (var index = 0; index < alias.length; index++) {
         var name = alias[index];
@@ -70,13 +84,35 @@ Channel.prototype.confirm = function(data) {
 
     this.data = data;
     this.subscribed = true;
-
     this.trigger("subscribe", data);
-}
+};
+
+Channel.prototype.setunsubscribe = function(data) {
+    var alias = (data && data.alias) || [];
+    for (var index = 0; index < alias.length; index++) {
+        var name = alias[index];
+        this.pushi.onnsubscribe(name, {});
+    }
+
+    this.subscribed = false;
+    this.trigger("unsubscribe", data);
+};
+
+Channel.prototype.setlatest = function(data) {
+    this.trigger("latest", data);
+};
 
 Channel.prototype.send = function(event, data, persist) {
     this.pushi.sendChannel(event, data, this.name, persist);
 };
+
+Channel.prototype.unsubscribe = function(callback) {
+    this.pushi.unsubscribe(this.name, callback);
+};
+
+Channel.prototype.latest = function(skip, count, callback) {
+    this.pushi.latest(this.name, skip, count, callback);
+}
 
 Channel.prototype.trigger = Observable.prototype.trigger;
 Channel.prototype.bind = Observable.prototype.bind;
@@ -321,9 +357,31 @@ Pushi.prototype.onodisconnect = function(data) {
 };
 
 Pushi.prototype.onsubscribe = function(channel, data) {
+    if (!this.channels[channel]) {
+        return;
+    }
     var _channel = this.channels[channel];
-    _channel.confirm(data);
+    _channel.setsubscribe(data);
     this.trigger("subscribe", channel, data);
+};
+
+Pushi.prototype.onunsubscribe = function(channel, data) {
+    if (!this.channels[channel]) {
+        return;
+    }
+    var _channel = this.channels[channel];
+    delete this.channels[channel];
+    _channel.setunsubscribe(data);
+    this.trigger("unsubscribe", channel, data);
+};
+
+Pushi.prototype.onlatest = function(channel, data) {
+    if (!this.channels[channel]) {
+        return;
+    }
+    var _channel = this.channels[channel];
+    _channel.setlatest(data);
+    this.trigger("latest", channel, data);
 };
 
 Pushi.prototype.onmemberadded = function(channel, member) {
@@ -346,6 +404,16 @@ Pushi.prototype.onmessage = function(json) {
         case "pusher_internal:subscription_succeeded" :
             var data = JSON.parse(json.data);
             this.onsubscribe(channel, data);
+            break;
+
+        case "pusher_internal:unsubscription_succeeded" :
+            var data = JSON.parse(json.data);
+            this.onunsubscribe(channel, data);
+            break;
+
+        case "pusher_internal:latest" :
+            var data = JSON.parse(json.data);
+            this.onlatest(channel, data);
             break;
 
         case "pusher:member_added" :
@@ -402,7 +470,7 @@ Pushi.prototype.invalidate = function(channel) {
     }
 };
 
-Pushi.prototype.subscribe = function(channel, force) {
+Pushi.prototype.subscribe = function(channel, force, callback) {
     // sets the current context in the self variable to
     // be used latter for the clojure functions
     var self = this;
@@ -452,12 +520,22 @@ Pushi.prototype.subscribe = function(channel, force) {
     var channel = new Channel(this, name);
     this.channels[name] = channel;
 
+    // in case the callback function is defined registers for the
+    // subscribe event on the channel object
+    callback && channel.bind("subscribe", callback, true);
+
     // returns the channel structure as a result of this function
     // to be used by the caller method or function
     return channel;
 };
 
-Pushi.prototype.unsubscribe = function(channel, force) {
+Pushi.prototype.unsubscribe = function(channel, callback) {
+    // verifies if the channel is currently defined in the
+    // list of channels for the connection if not returns immediately
+    if (!this.channels[channel]) {
+        return;
+    }
+
     // sends the event for the unsubscription of the channel through
     // the current pushi socket so that no more messages are received
     // regarding the provided channel
@@ -465,10 +543,62 @@ Pushi.prototype.unsubscribe = function(channel, force) {
                 channel : channel
             });
 
-    // sets the current channel value as the name and then removed
-    // the channel stucture from the map of channels
+    // sets the channel as the name value and then tries to retrieve
+    // the channel structure for the provided name
     var name = channel;
-    delete this.channels[name];
+    var channel = this.channels[name];
+
+    // in case the callback function is defined registers for the
+    // unsubscribe event on the channel object
+    callback && channel.bind("unsubscribe", callback, true);
+
+    // returns the channel structure to the caller function so that
+    // may be used for any other operations pending
+    return channel;
+};
+
+Pushi.prototype.latest = function(channel, skip, count, callback) {
+    // sets the default values for the latest retrieval, so that if
+    // they are not provided values are ensured
+    skip = skip || 0;
+    count = count || 10;
+
+    // verifies if the channel is currently defined in the
+    // list of channels for the connection if not returns immediately
+    if (!this.channels[channel] && !channel.startsWith("peer-")) {
+        return;
+    }
+
+    // sends the event for the latest (retrival) of the channel through
+    // the current pushi socket so that the latest messages are retrieved
+    this.sendEvent("pusher:latest", {
+                channel : channel,
+                skip : skip,
+                count : count
+            });
+
+    // sets the channel as the name value and then tries to retrieve
+    // the channel structure for the provided name, note that the ensure
+    // call will make sure that at least one channel object exists
+    var name = channel;
+    var channel = this.ensureChannel(name);
+
+    // in case the callback function is defined registers for the
+    // latest event on the channel object
+    callback && channel.bind("latest", callback, true);
+
+    // returns the channel structure to the caller function so that
+    // may be used for any other operations pending
+    return channel;
+};
+
+Pushi.prototype.ensureChannel = function(name) {
+    if (this.channels[name]) {
+        return this.channels[name];
+    }
+    var channel = new Channel(this, name);
+    this.channels[name] = channel;
+    return channel;
 };
 
 Pushi.prototype.subscribePublic = function(channel) {
