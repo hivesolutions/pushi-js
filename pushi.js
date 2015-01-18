@@ -60,7 +60,7 @@ Observable.prototype.bind = function(event, method, oneshot) {
 Observable.prototype.unbind = function(event, method) {
     var methods = this.events[event] || [];
     var index = methods.indexOf(method);
-    index && methods.splice(index, 1);
+    index != -1 && methods.splice(index, 1);
 };
 
 var Channel = function(pushi, name) {
