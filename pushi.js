@@ -102,8 +102,8 @@ Channel.prototype.setlatest = function(data) {
     this.trigger("latest", data);
 };
 
-Channel.prototype.send = function(event, data, persist) {
-    this.pushi.sendChannel(event, data, this.name, persist);
+Channel.prototype.send = function(event, data, echo, persist) {
+    this.pushi.sendChannel(event, data, this.name, echo, persist);
 };
 
 Channel.prototype.unsubscribe = function(callback) {
@@ -435,22 +435,26 @@ Pushi.prototype.send = function(json) {
     this.socket.send(data);
 };
 
-Pushi.prototype.sendEvent = function(event, data, persist) {
+Pushi.prototype.sendEvent = function(event, data, echo, persist) {
+    echo = echo === undefined ? false : echo;
     persist = persist === undefined ? true : persist;
     var json = {
         event : event,
         data : data,
+        echo : echo,
         persist : persist
     };
     this.send(json);
 };
 
-Pushi.prototype.sendChannel = function(event, data, channel, persist) {
+Pushi.prototype.sendChannel = function(event, data, channel, echo, persist) {
+    echo = echo === undefined ? false : echo;
     persist = persist === undefined ? true : persist;
     var json = {
         event : event,
         data : data,
         channel : channel,
+        echo : echo,
         persist : persist
     };
     this.send(json);
