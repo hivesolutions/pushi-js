@@ -218,7 +218,7 @@ Pushi.prototype.clone = function(base) {
     // the appropriate handler with the correct data
     if (this.state == "connected") {
         var data = {
-            socket_id : this.socketId
+            socket_id: this.socketId
         };
         this.onoconnect(data);
     }
@@ -263,8 +263,7 @@ Pushi.prototype.open = function(callback) {
         var message = event.data;
         var json = JSON.parse(message);
 
-        var isConnected = self.state == "disconnected"
-                && json.event == "pusher:connection_established";
+        var isConnected = self.state == "disconnected" && json.event == "pusher:connection_established";
 
         if (isConnected) {
             var data = JSON.parse(json.data);
@@ -304,8 +303,8 @@ Pushi.prototype.close = function(callback) {
 Pushi.prototype.reopen = function(callback) {
     var self = this;
     this.close(function() {
-                self.open(callback);
-            });
+        self.open(callback);
+    });
 };
 
 Pushi.prototype.callobj = function(callable, objects) {
@@ -338,8 +337,8 @@ Pushi.prototype.retry = function() {
     // the server side nor to large that takes to long for
     // the reconnection to take effect (bad user experience)
     setTimeout(function() {
-                self.open();
-            }, this.timeout);
+        self.open();
+    }, this.timeout);
 };
 
 Pushi.prototype.onoconnect = function(data) {
@@ -401,27 +400,27 @@ Pushi.prototype.onmessage = function(json) {
     }
 
     switch (json.event) {
-        case "pusher_internal:subscription_succeeded" :
+        case "pusher_internal:subscription_succeeded":
             var data = JSON.parse(json.data);
             this.onsubscribe(channel, data);
             break;
 
-        case "pusher_internal:unsubscription_succeeded" :
+        case "pusher_internal:unsubscription_succeeded":
             var data = JSON.parse(json.data);
             this.onunsubscribe(channel, data);
             break;
 
-        case "pusher_internal:latest" :
+        case "pusher_internal:latest":
             var data = JSON.parse(json.data);
             this.onlatest(channel, data);
             break;
 
-        case "pusher:member_added" :
+        case "pusher:member_added":
             var member = JSON.parse(json.member);
             this.onmemberadded(channel, member);
             break;
 
-        case "pusher:member_removed" :
+        case "pusher:member_removed":
             var member = JSON.parse(json.member);
             this.onmemberremoved(channel, member);
             break;
@@ -439,10 +438,10 @@ Pushi.prototype.sendEvent = function(event, data, echo, persist) {
     echo = echo === undefined ? false : echo;
     persist = persist === undefined ? true : persist;
     var json = {
-        event : event,
-        data : data,
-        echo : echo,
-        persist : persist
+        event: event,
+        data: data,
+        echo: echo,
+        persist: persist
     };
     this.send(json);
 };
@@ -451,11 +450,11 @@ Pushi.prototype.sendChannel = function(event, data, channel, echo, persist) {
     echo = echo === undefined ? false : echo;
     persist = persist === undefined ? true : persist;
     var json = {
-        event : event,
-        data : data,
-        channel : channel,
-        echo : echo,
-        persist : persist
+        event: event,
+        data: data,
+        channel: channel,
+        echo: echo,
+        persist: persist
     };
     this.send(json);
 };
@@ -497,8 +496,8 @@ Pushi.prototype.subscribe = function(channel, force, callback) {
         var _channel = this._base.channels[channel];
         if (_channel && !force) {
             setTimeout(function() {
-                        self.onsubscribe(channel, _channel.data);
-                    });
+                self.onsubscribe(channel, _channel.data);
+            });
             this.channels[channel] = _channel;
             return _channel;
         }
@@ -508,9 +507,8 @@ Pushi.prototype.subscribe = function(channel, force, callback) {
     // is of type private and in case it is uses the proper
     // private way of subscription otherwise uses the public
     // way for subscription (no authentication process)
-    var isPrivate = channel.startsWith("private-")
-            || channel.startsWith("presence-")
-            || channel.startsWith("personal-");
+    var isPrivate = channel.startsWith("private-") || channel.startsWith("presence-") || channel.startsWith(
+        "personal-");
     if (isPrivate) {
         this.subscribePrivate(channel);
     } else {
@@ -544,8 +542,8 @@ Pushi.prototype.unsubscribe = function(channel, callback) {
     // the current pushi socket so that no more messages are received
     // regarding the provided channel
     this.sendEvent("pusher:unsubscribe", {
-                channel : channel
-            });
+        channel: channel
+    });
 
     // sets the channel as the name value and then tries to retrieve
     // the channel structure for the provided name
@@ -576,10 +574,10 @@ Pushi.prototype.latest = function(channel, skip, count, callback) {
     // sends the event for the latest (retrival) of the channel through
     // the current pushi socket so that the latest messages are retrieved
     this.sendEvent("pusher:latest", {
-                channel : channel,
-                skip : skip,
-                count : count
-            });
+        channel: channel,
+        skip: skip,
+        count: count
+    });
 
     // sets the channel as the name value and then tries to retrieve
     // the channel structure for the provided name, note that the ensure
@@ -607,8 +605,8 @@ Pushi.prototype.ensureChannel = function(name) {
 
 Pushi.prototype.subscribePublic = function(channel) {
     this.sendEvent("pusher:subscribe", {
-                channel : channel
-            });
+        channel: channel
+    });
 };
 
 Pushi.prototype.subscribePrivate = function(channel) {
@@ -654,10 +652,10 @@ Pushi.prototype.subscribePrivate = function(channel) {
         // channel information together with the auth token and
         // the channel data to be used (in case it exists)
         self.sendEvent("pusher:subscribe", {
-                    channel : channel,
-                    auth : result.auth,
-                    channel_data : result.channel_data
-                });
+            channel: channel,
+            auth: result.auth,
+            channel_data: result.channel_data
+        });
     };
     request.send();
 };
