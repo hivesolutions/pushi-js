@@ -102,6 +102,10 @@ Channel.prototype.setlatest = function(data) {
     this.trigger("latest", data);
 };
 
+Channel.prototype.setmessage = function(event, data, mid, timestamp) {
+    this.trigger(event, data, mid, timestamp);
+};
+
 Channel.prototype.send = function(event, data, echo, persist) {
     this.pushi.sendChannel(event, data, this.name, echo, persist);
 };
@@ -427,6 +431,7 @@ Pushi.prototype.onmessage = function(json) {
     }
 
     this.trigger(json.event, json.data, json.channel, json.mid, json.timestamp);
+    _channel && _channel.setmessage(json.event, json.data, json.mid, json.timestamp);
 };
 
 Pushi.prototype.send = function(json) {
