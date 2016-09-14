@@ -23,28 +23,29 @@
 // __copyright__ = Copyright (c) 2008-2016 Hive Solutions Lda.
 // __license__   = Apache License, Version 2.0
 
-var PUSHI_CONNECTIONS = {}
+var PUSHI_CONNECTIONS = {};
 
 var Observable = function() {
     this.events = {};
 };
 
 Observable.prototype.trigger = function(event) {
+    var index = 0;
     var oneshots = null;
     var methods = this.events[event] || [];
-    for (var index = 0; index < methods.length; index++) {
+    for (index = 0; index < methods.length; index++) {
         var method = methods[index];
         method.apply(this, arguments);
-        if (method.oneshot == false) {
-            continue
+        if (method.oneshot === false) {
+            continue;
         }
-        oneshots = oneshots == null ? [] : oneshots;
+        oneshots = oneshots === null ? [] : oneshots;
         oneshots.push(method);
     }
-    if (oneshots == null) {
+    if (oneshots === null) {
         return;
     }
-    for (var index = 0; index < oneshots.length; index++) {
+    for (index = 0; index < oneshots.length; index++) {
         var oneshot = oneshots[index];
         this.unbind(event, oneshot);
     }
@@ -116,7 +117,7 @@ Channel.prototype.unsubscribe = function(callback) {
 
 Channel.prototype.latest = function(skip, count, callback) {
     this.pushi.latest(this.name, skip, count, callback);
-}
+};
 
 Channel.prototype.trigger = Observable.prototype.trigger;
 Channel.prototype.bind = Observable.prototype.bind;
@@ -264,16 +265,17 @@ Pushi.prototype.open = function(callback) {
     };
 
     this.socket.onmessage = function(event) {
+        var data = null;
         var message = event.data;
         var json = JSON.parse(message);
 
         var isConnected = self.state == "disconnected" && json.event == "pusher:connection_established";
 
         if (isConnected) {
-            var data = JSON.parse(json.data);
+            data = JSON.parse(json.data);
             self.callobj(Pushi.prototype.onoconnect, this.subscriptions, data);
         } else if (self.state == "connected") {
-            var data = json;
+            data = json;
             self.callobj(Pushi.prototype.onmessage, this.subscriptions, data);
         }
 
@@ -312,13 +314,14 @@ Pushi.prototype.reopen = function(callback) {
 };
 
 Pushi.prototype.callobj = function(callable, objects) {
+    var index = 0;
     var args = [];
 
-    for (var index = 2; index < arguments.length; index++) {
-        args.push(arguments[index])
+    for (index = 2; index < arguments.length; index++) {
+        args.push(arguments[index]);
     }
 
-    for (var index = 0; index < objects.length; index++) {
+    for (index = 0; index < objects.length; index++) {
         var _object = objects[index];
         callable.apply(_object, args);
     }
@@ -396,6 +399,8 @@ Pushi.prototype.onmemberremoved = function(channel, member) {
 };
 
 Pushi.prototype.onmessage = function(json) {
+    var data = null;
+    var member = null;
     var channel = json.channel;
     var _channel = this.channels[channel];
     var isPeer = channel.startsWith("peer-");
@@ -405,27 +410,27 @@ Pushi.prototype.onmessage = function(json) {
 
     switch (json.event) {
         case "pusher_internal:subscription_succeeded":
-            var data = JSON.parse(json.data);
+            data = JSON.parse(json.data);
             this.onsubscribe(channel, data);
             break;
 
         case "pusher_internal:unsubscription_succeeded":
-            var data = JSON.parse(json.data);
+            data = JSON.parse(json.data);
             this.onunsubscribe(channel, data);
             break;
 
         case "pusher_internal:latest":
-            var data = JSON.parse(json.data);
+            data = JSON.parse(json.data);
             this.onlatest(channel, data);
             break;
 
         case "pusher:member_added":
-            var member = JSON.parse(json.member);
+            member = JSON.parse(json.member);
             this.onmemberadded(channel, member);
             break;
 
         case "pusher:member_removed":
-            var member = JSON.parse(json.member);
+            member = JSON.parse(json.member);
             this.onmemberremoved(channel, member);
             break;
     }
@@ -498,7 +503,7 @@ Pushi.prototype.subscribe = function(channel, force, callback) {
     // called immediately as there's no remote call to be
     // performed for such situations
     if (this._cloned) {
-        var _channel = this._base.channels[channel];
+        _channel = this._base.channels[channel];
         if (_channel && !force) {
             setTimeout(function() {
                 self.onsubscribe(channel, _channel.data);
@@ -524,7 +529,7 @@ Pushi.prototype.subscribe = function(channel, force, callback) {
     // a channel object with the current contect and the name and
     // then sets the channel in the channels map structure
     var name = channel;
-    var channel = new Channel(this, name);
+    channel = new Channel(this, name);
     this.channels[name] = channel;
 
     // in case the callback function is defined registers for the
@@ -553,7 +558,7 @@ Pushi.prototype.unsubscribe = function(channel, callback) {
     // sets the channel as the name value and then tries to retrieve
     // the channel structure for the provided name
     var name = channel;
-    var channel = this.channels[name];
+    channel = this.channels[name];
 
     // in case the callback function is defined registers for the
     // unsubscribe event on the channel object
@@ -588,7 +593,7 @@ Pushi.prototype.latest = function(channel, skip, count, callback) {
     // the channel structure for the provided name, note that the ensure
     // call will make sure that at least one channel object exists
     var name = channel;
-    var channel = this.ensureChannel(name);
+    channel = this.ensureChannel(name);
 
     // in case the callback function is defined registers for the
     // latest event on the channel object
