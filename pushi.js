@@ -61,7 +61,7 @@ Observable.prototype.bind = function(event, method, oneshot) {
 Observable.prototype.unbind = function(event, method) {
     var methods = this.events[event] || [];
     var index = methods.indexOf(method);
-    index != -1 && methods.splice(index, 1);
+    index !== -1 && methods.splice(index, 1);
 };
 
 var Channel = function(pushi, name) {
@@ -221,7 +221,7 @@ Pushi.prototype.clone = function(base) {
     // in case the current state of the connection is
     // connected must simulate the connection by calling
     // the appropriate handler with the correct data
-    if (this.state == "connected") {
+    if (this.state === "connected") {
         var data = {
             socket_id: this.socketId
         };
@@ -232,7 +232,7 @@ Pushi.prototype.clone = function(base) {
 Pushi.prototype.open = function(callback) {
     // in case the current state is not disconnected returns immediately
     // as this is considered to be the only valid state for the operation
-    if (this.state != "disconnected") {
+    if (this.state !== "disconnected") {
         return;
     }
 
@@ -269,12 +269,12 @@ Pushi.prototype.open = function(callback) {
         var message = event.data;
         var json = JSON.parse(message);
 
-        var isConnected = self.state == "disconnected" && json.event == "pusher:connection_established";
+        var isConnected = self.state === "disconnected" && json.event === "pusher:connection_established";
 
         if (isConnected) {
             data = JSON.parse(json.data);
             self.callobj(Pushi.prototype.onoconnect, this.subscriptions, data);
-        } else if (self.state == "connected") {
+        } else if (self.state === "connected") {
             data = json;
             self.callobj(Pushi.prototype.onmessage, this.subscriptions, data);
         }
@@ -293,7 +293,7 @@ Pushi.prototype.open = function(callback) {
 Pushi.prototype.close = function(callback) {
     // in case the current state is not connected returns immediately
     // as this is considered to be the only valid state for the operation
-    if (this.state != "connected") {
+    if (this.state !== "connected") {
         return;
     }
 
@@ -646,7 +646,7 @@ Pushi.prototype.subscribePrivate = function(channel) {
     request.onreadystatechange = function() {
         // in case the current state is not ready returns
         // immediately as it's not a (to) success change
-        if (request.readyState != 4) {
+        if (request.readyState !== 4) {
             return;
         }
 
@@ -671,15 +671,15 @@ Pushi.prototype.subscribePrivate = function(channel) {
 };
 
 Pushi.prototype.isValid = function(appKey, baseUrl) {
-    return appKey == this.appKey && baseUrl == this.baseUrl;
+    return appKey === this.appKey && baseUrl === this.baseUrl;
 };
 
 Pushi.prototype.trigger = Observable.prototype.trigger;
 Pushi.prototype.bind = Observable.prototype.bind;
 Pushi.prototype.unbind = Observable.prototype.unbind;
 
-if (typeof String.prototype.startsWith != "function") {
+if (typeof String.prototype.startsWith !== "function") {
     String.prototype.startsWith = function(string) {
-        return this.slice(0, string.length) == string;
+        return this.slice(0, string.length) === string;
     };
 }
