@@ -92,7 +92,7 @@ Channel.prototype.setunsubscribe = function(data) {
     var alias = (data && data.alias) || [];
     for (var index = 0; index < alias.length; index++) {
         var name = alias[index];
-        this.pushi.onnsubscribe(name, {});
+        this.pushi.onunsubscribe(name, {});
     }
 
     this.subscribed = false;
