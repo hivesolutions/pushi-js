@@ -22,6 +22,10 @@
 
 var PUSHI_CONNECTIONS = {};
 
+// ===========================================
+// Observable Implementation
+// ===========================================
+
 var Observable = function() {
     this.events = {};
 };
@@ -60,6 +64,10 @@ Observable.prototype.unbind = function(event, method) {
     var index = methods.indexOf(method);
     index !== -1 && methods.splice(index, 1);
 };
+
+// ===========================================
+// Pushi Channel Implementation
+// ===========================================
 
 var Channel = function(pushi, name) {
     this.pushi = pushi;
