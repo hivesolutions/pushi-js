@@ -164,7 +164,7 @@ Pushi.prototype.init = function(appKey, options, callback) {
 };
 
 Pushi.prototype.config = function(appKey, options) {
-    // runs the definition of a series of contant values that
+    // runs the definition of a series of constant values that
     // will be used as defaults for some options
     var TIMEOUT = 5000;
     var BASE_URL = "wss://puxiapp.com/";
@@ -173,6 +173,7 @@ Pushi.prototype.config = function(appKey, options) {
     // to the pre-defined (constant) values if that's required
     var timeout = options.timeout || TIMEOUT;
     var baseUrl = options.baseUrl || BASE_URL;
+    var baseWebUrl = options.baseWebUrl || null;
 
     // removes any previously registered configuration for the
     // the current instance app key (for cases of re-configuration)
@@ -183,6 +184,7 @@ Pushi.prototype.config = function(appKey, options) {
     this.timeout = timeout;
     this.url = baseUrl + appKey;
     this.baseUrl = baseUrl;
+    this.baseWebUrl = baseWebUrl;
     this.appKey = appKey;
     this.options = options || {};
 
@@ -203,6 +205,7 @@ Pushi.prototype.clone = function(base) {
     this.timeout = base.timeout;
     this.url = base.url;
     this.baseUrl = base.baseUrl;
+    this.baseWebUrl = base.baseWebUrl;
     this.appKey = base.appKey;
     this.options = base.options;
     this.socket = base.socket;
@@ -997,16 +1000,16 @@ Pushi.prototype.teardownWebPush = function(event) {
  * @private
  */
 Pushi.prototype._buildApiUrl = function(path) {
-    // determines the API base URL from options or derives it
+    // determines the HTTP API base URL from options or derives it
     // from the WebSocket URL by replacing the protocol
-    var apiUrl = this.options.apiUrl;
-    if (!apiUrl) {
-        apiUrl = this.baseUrl.replace("wss://", "https://").replace("ws://", "http://");
+    var baseWebUrl = this.baseWebUrl;
+    if (!baseWebUrl) {
+        baseWebUrl = this.baseUrl.replace("wss://", "https://").replace("ws://", "http://");
     }
-    apiUrl = apiUrl.replace(/\/$/, "");
+    baseWebUrl = baseWebUrl.replace(/\/$/, "");
 
     // builds the complete URL with app key parameter
-    var url = apiUrl + path;
+    var url = baseWebUrl + path;
     url += (url.indexOf("?") === -1 ? "?" : "&") + "app_key=" + this.appKey;
     return url;
 };
