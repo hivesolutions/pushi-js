@@ -523,7 +523,7 @@ Pushi.prototype.subscribe = function(channel, force, callback) {
     }
 
     // retrieves the channel as the name value and then creates
-    // a channel object with the current contect and the name and
+    // a channel object with the current context and the name and
     // then sets the channel in the channels map structure
     var name = channel;
     channel = new Channel(this, name);
@@ -628,7 +628,7 @@ Pushi.prototype.subscribePrivate = function(channel) {
     // used by the clojures in the current function
     var self = this;
 
-    // contructs the get query part of the url with both the socket
+    // constructs the get query part of the url with both the socket
     // id of the current connection and the channel value for it
     // then constructs the complete url value for the connection
     var query = "?socket_id=" + this.socketId + "&channel=" + channel;
