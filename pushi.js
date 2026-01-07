@@ -708,7 +708,7 @@ Pushi.prototype.unbind = Observable.prototype.unbind;
  */
 Pushi.prototype.getVapidPublicKey = function(callback) {
     var self = this;
-    var url = this._buildApiUrl("/apps/vapid_key");
+    var url = this._buildApiUrl("/vapid_key");
 
     return new Promise(function(resolve, reject) {
         var request = new XMLHttpRequest();
@@ -1003,7 +1003,7 @@ Pushi.prototype.teardownWebPush = function(event) {
  * Builds an API URL with the app key parameter. This is used
  * internally by the Web Push methods to construct request URLs.
  *
- * @param {String} path The API path (e.g., '/apps/vapid_key').
+ * @param {String} path The API path (e.g., '/vapid_key').
  * @returns {String} The complete API URL with app key.
  * @private
  */
