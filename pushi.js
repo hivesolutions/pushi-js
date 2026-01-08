@@ -896,11 +896,10 @@ Pushi.prototype.removeSubscriptionFromServer = function(endpoint, event) {
     var self = this;
 
     var path = "/web_pushes/" + encodeURIComponent(endpoint);
-    if (event) {
-        path += "/" + encodeURIComponent(event);
-    }
-
     var url = this._buildApiUrl(path);
+    if (event) {
+        url += "&event=" + encodeURIComponent(event);
+    }
 
     return new Promise(function(resolve, reject) {
         var request = new XMLHttpRequest();
