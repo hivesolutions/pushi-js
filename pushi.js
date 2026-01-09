@@ -53,7 +53,7 @@ Observable.prototype.trigger = function(event) {
 };
 
 Observable.prototype.bind = function(event, method, oneshot) {
-    method.oneshot = oneshot ? true : false;
+    method.oneshot = Boolean(oneshot);
     var methods = this.events[event] || [];
     methods.push(method);
     this.events[event] = methods;
@@ -371,7 +371,7 @@ Pushi.prototype.onoconnect = function(data) {
     this.trigger("connect");
 };
 
-Pushi.prototype.onodisconnect = function(data) {
+Pushi.prototype.onodisconnect = function(_data) {
     this.socketId = null;
     this.channels = {};
     this.state = "disconnected";
@@ -641,7 +641,7 @@ Pushi.prototype.subscribePrivate = function(channel) {
     // because there's not enough information to proceed with the
     // authentication process for the private channel
     if (!this.authEndpoint) {
-        throw "No auth endpoint defined";
+        throw new Error("No auth endpoint defined");
     }
 
     // sets the current context in the self variable to be
@@ -1175,4 +1175,9 @@ if (typeof String.prototype.startsWith !== "function") {
     String.prototype.startsWith = function(string) {
         return this.slice(0, string.length) === string;
     };
+}
+
+// Module exports for Node.js/CommonJS environments
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = { Pushi: Pushi, Channel: Channel, Observable: Observable };
 }
