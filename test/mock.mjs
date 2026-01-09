@@ -144,15 +144,42 @@ const mockNavigator = {
     }
 };
 
+// Store original values for cleanup
+let originalNavigator;
+let originalWindow;
+
 /**
  * Setup global mocks
  */
 function setupMocks() {
     global.WebSocket = MockWebSocket;
     global.XMLHttpRequest = MockXMLHttpRequest;
-    global.window = mockWindow;
     global.Notification = MockNotification;
-    global.navigator = mockNavigator;
+
+    // Store originals
+    originalWindow = global.window;
+    originalNavigator = global.navigator;
+
+    // Use Object.defineProperty for read-only properties (Node 22+)
+    try {
+        global.window = mockWindow;
+    } catch (_error) {
+        Object.defineProperty(global, "window", {
+            value: mockWindow,
+            writable: true,
+            configurable: true
+        });
+    }
+
+    try {
+        global.navigator = mockNavigator;
+    } catch (_error) {
+        Object.defineProperty(global, "navigator", {
+            value: mockNavigator,
+            writable: true,
+            configurable: true
+        });
+    }
 }
 
 /**
@@ -161,9 +188,28 @@ function setupMocks() {
 function cleanupMocks() {
     delete global.WebSocket;
     delete global.XMLHttpRequest;
-    delete global.window;
     delete global.Notification;
-    delete global.navigator;
+
+    // Restore originals using defineProperty for read-only properties
+    try {
+        global.window = originalWindow;
+    } catch (_error) {
+        Object.defineProperty(global, "window", {
+            value: originalWindow,
+            writable: true,
+            configurable: true
+        });
+    }
+
+    try {
+        global.navigator = originalNavigator;
+    } catch (_error) {
+        Object.defineProperty(global, "navigator", {
+            value: originalNavigator,
+            writable: true,
+            configurable: true
+        });
+    }
 }
 
 export {
