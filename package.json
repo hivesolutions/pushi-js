@@ -1,6 +1,6 @@
 {
     "name": "pushi",
-    "version": "0.4.8",
+    "version": "0.5.0",
     "description": "JavaScript client for Hive Pushi push notification system",
     "main": "pushi.js",
     "browser": "pushi.js",
