@@ -182,6 +182,8 @@ Pushi.prototype.config = function(appKey, options) {
     var timeout = options.timeout || TIMEOUT;
     var baseUrl = options.baseUrl || BASE_URL;
     var baseWebUrl = options.baseWebUrl || null;
+    var appId = options.appId || null;
+    var appSecret = options.appSecret || null;
 
     // removes any previously registered configuration for the
     // the current instance app key (for cases of re-configuration)
@@ -194,6 +196,9 @@ Pushi.prototype.config = function(appKey, options) {
     this.baseUrl = baseUrl;
     this.baseWebUrl = baseWebUrl;
     this.appKey = appKey;
+    this.appId = appId;
+    this.appSecret = appSecret;
+    this.authenticated = false;
     this.options = options || {};
 
     // sets the current connection for the app key value
@@ -346,7 +351,7 @@ Pushi.prototype.retry = function() {
 
     // in case this is a cloned object the retry operation
     // is not possible because this object does not owns
-    // the underyling websocket object
+    // the underlying websocket object
     if (this._cloned) {
         return;
     }
@@ -695,6 +700,94 @@ Pushi.prototype.bind = Observable.prototype.bind;
 Pushi.prototype.unbind = Observable.prototype.unbind;
 
 // ===========================================
+// Authentication Support
+// ===========================================
+
+/**
+ * Logs in to the Pushi server using app credentials.
+ * This establishes a session that is required for Web Push API
+ * operations. Must be called before using any Web Push methods.
+ *
+ * @param {Object} options Configuration options:
+ *   - appId: The app identifier (required if not provided in constructor)
+ *   - appSecret: The app secret (required if not provided in constructor)
+ * @returns {Promise} Promise that resolves when logged in.
+ */
+Pushi.prototype.login = function(options) {
+    var self = this;
+    options = options || {};
+
+    // uses the provided values or falls back to the configured ones
+    var appId = options.appId || this.appId;
+    var appSecret = options.appSecret || this.appSecret;
+
+    if (!appId) {
+        return Promise.reject(new Error("App ID is required for authentication"));
+    }
+    if (!appSecret) {
+        return Promise.reject(new Error("App secret is required for authentication"));
+    }
+
+    // builds the login URL with authentication parameters
+    var url = this._buildApiUrl("/login");
+    url += "?app_id=" + encodeURIComponent(appId);
+    url += "&app_key=" + encodeURIComponent(this.appKey);
+    url += "&app_secret=" + encodeURIComponent(appSecret);
+
+    return new Promise(function(resolve, reject) {
+        var request = new XMLHttpRequest();
+        request.open("GET", url, true);
+        request.withCredentials = true;
+        request.onreadystatechange = function() {
+            if (request.readyState !== 4) {
+                return;
+            }
+
+            if (request.status === 200) {
+                self.authenticated = true;
+                self.trigger("login");
+                resolve();
+            } else {
+                var error = new Error("Login failed: " + request.status);
+                reject(error);
+            }
+        };
+        request.send();
+    });
+};
+
+/**
+ * Logs out from the Pushi server, ending the current session.
+ *
+ * @returns {Promise} Promise that resolves when logged out.
+ */
+Pushi.prototype.logout = function() {
+    var self = this;
+    var url = this._buildApiUrl("/logout");
+
+    return new Promise(function(resolve, reject) {
+        var request = new XMLHttpRequest();
+        request.open("GET", url, true);
+        request.withCredentials = true;
+        request.onreadystatechange = function() {
+            if (request.readyState !== 4) {
+                return;
+            }
+
+            if (request.status === 200) {
+                self.authenticated = false;
+                self.trigger("logout");
+                resolve();
+            } else {
+                var error = new Error("Logout failed: " + request.status);
+                reject(error);
+            }
+        };
+        request.send();
+    });
+};
+
+// ===========================================
 // Web Push API Support
 // ===========================================
 
@@ -707,12 +800,12 @@ Pushi.prototype.unbind = Observable.prototype.unbind;
  * @returns {Promise} Promise that resolves with the VAPID public key.
  */
 Pushi.prototype.getVapidPublicKey = function(callback) {
-    var self = this;
     var url = this._buildApiUrl("/vapid_key");
 
     return new Promise(function(resolve, reject) {
         var request = new XMLHttpRequest();
         request.open("GET", url, true);
+        request.withCredentials = true;
         request.onreadystatechange = function() {
             if (request.readyState !== 4) {
                 return;
@@ -844,16 +937,20 @@ Pushi.prototype.extractSubscriptionInfo = function(subscription) {
  * @returns {Promise} Promise that resolves with server response.
  */
 Pushi.prototype.sendSubscriptionToServer = function(subscriptionInfo, event, options) {
-    var self = this;
     options = options || {};
 
     var url = this._buildApiUrl("/web_pushes");
 
+    // adds optional query parameters
+    var params = [];
     if (options.auth) {
-        url += "&auth=" + encodeURIComponent(options.auth);
+        params.push("auth=" + encodeURIComponent(options.auth));
     }
     if (options.unsubscribe !== undefined) {
-        url += "&unsubscribe=" + options.unsubscribe;
+        params.push("unsubscribe=" + options.unsubscribe);
+    }
+    if (params.length > 0) {
+        url += "?" + params.join("&");
     }
 
     var data = {
@@ -866,6 +963,7 @@ Pushi.prototype.sendSubscriptionToServer = function(subscriptionInfo, event, opt
     return new Promise(function(resolve, reject) {
         var request = new XMLHttpRequest();
         request.open("POST", url, true);
+        request.withCredentials = true;
         request.setRequestHeader("Content-Type", "application/json");
         request.onreadystatechange = function() {
             if (request.readyState !== 4) {
@@ -893,17 +991,17 @@ Pushi.prototype.sendSubscriptionToServer = function(subscriptionInfo, event, opt
  * @returns {Promise} Promise that resolves with server response.
  */
 Pushi.prototype.removeSubscriptionFromServer = function(endpoint, event) {
-    var self = this;
-
+    // builds the URL with event as a query parameter
     var path = "/web_pushes/" + encodeURIComponent(endpoint);
     var url = this._buildApiUrl(path);
     if (event) {
-        url += "&event=" + encodeURIComponent(event);
+        url += "?event=" + encodeURIComponent(event);
     }
 
     return new Promise(function(resolve, reject) {
         var request = new XMLHttpRequest();
         request.open("DELETE", url, true);
+        request.withCredentials = true;
         request.onreadystatechange = function() {
             if (request.readyState !== 4) {
                 return;
@@ -926,6 +1024,8 @@ Pushi.prototype.removeSubscriptionFromServer = function(endpoint, event) {
  * the complete flow: requesting permission, registering service worker,
  * subscribing to push, and registering with the server.
  *
+ * IMPORTANT: You must call login() before using this method.
+ *
  * @param {String} event The event/channel to subscribe to.
  * @param {Object} options Configuration options including:
  *   - swPath: Service worker path (default: '/sw.js')
@@ -936,6 +1036,13 @@ Pushi.prototype.removeSubscriptionFromServer = function(endpoint, event) {
 Pushi.prototype.setupWebPush = function(event, options) {
     var self = this;
     options = options || {};
+
+    // checks if the user is logged in
+    if (!this.authenticated) {
+        return Promise.reject(new Error(
+            "Login required. Call login() before setupWebPush()"
+        ));
+    }
 
     var registration = null;
     var vapidPublicKey = null;
@@ -972,11 +1079,20 @@ Pushi.prototype.setupWebPush = function(event, options) {
  * High-level method to unsubscribe from Web Push notifications.
  * This removes the subscription from both the browser and the server.
  *
+ * IMPORTANT: You must call login() before using this method.
+ *
  * @param {String} event The event/channel to unsubscribe from (optional).
  * @returns {Promise} Promise that resolves when unsubscribed.
  */
 Pushi.prototype.teardownWebPush = function(event) {
     var self = this;
+
+    // checks if the user is logged in
+    if (!this.authenticated) {
+        return Promise.reject(new Error(
+            "Login required. Call login() before teardownWebPush()"
+        ));
+    }
 
     return navigator.serviceWorker.ready
         .then(function(registration) {
@@ -998,27 +1114,35 @@ Pushi.prototype.teardownWebPush = function(event) {
         });
 };
 
+// ===========================================
+// Helper Methods
+// ===========================================
+
 /**
- * Builds an API URL with the app key parameter. This is used
- * internally by the Web Push methods to construct request URLs.
+ * Builds an API URL for the Web Push methods. Uses session-based
+ * authentication, so no app key is included in the URL.
  *
  * @param {String} path The API path (e.g., '/vapid_key').
- * @returns {String} The complete API URL with app key.
+ * @returns {String} The complete API URL.
  * @private
  */
 Pushi.prototype._buildApiUrl = function(path) {
-    // determines the HTTP API base URL from options or derives it
-    // from the WebSocket URL by replacing the protocol
+    return this._getBaseWebUrl() + path;
+};
+
+/**
+ * Gets the base HTTP URL for API calls. Derives it from the
+ * WebSocket URL if not explicitly configured.
+ *
+ * @returns {String} The base HTTP URL without trailing slash.
+ * @private
+ */
+Pushi.prototype._getBaseWebUrl = function() {
     var baseWebUrl = this.baseWebUrl;
     if (!baseWebUrl) {
         baseWebUrl = this.baseUrl.replace("wss://", "https://").replace("ws://", "http://");
     }
-    baseWebUrl = baseWebUrl.replace(/\/$/, "");
-
-    // builds the complete URL with app key parameter
-    var url = baseWebUrl + path;
-    url += (url.indexOf("?") === -1 ? "?" : "&") + "app_key=" + this.appKey;
-    return url;
+    return baseWebUrl.replace(/\/$/, "");
 };
 
 /**
