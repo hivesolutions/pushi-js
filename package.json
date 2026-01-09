@@ -1,5 +1,5 @@
 {
-    "name": "pushi",
+    "name": "pushi-js",
     "version": "0.5.0",
     "description": "JavaScript client for Hive Pushi push notification system",
     "main": "pushi.js",
