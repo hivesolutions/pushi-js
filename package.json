@@ -4,14 +4,23 @@
     "description": "JavaScript client for Hive Pushi push notification system",
     "main": "pushi.js",
     "browser": "pushi.js",
-    "type": "module",
+    "module": "pushi.mjs",
+    "exports": {
+        ".": {
+            "import": "./pushi.mjs",
+            "require": "./pushi.js",
+            "browser": "./pushi.js",
+            "default": "./pushi.js"
+        }
+    },
     "files": [
-        "pushi.js"
+        "pushi.js",
+        "pushi.mjs"
     ],
     "scripts": {
         "lint": "eslint pushi.js",
         "lint-fix": "eslint pushi.js --fix",
-        "test": "echo \"No tests yet\" && exit 0"
+        "test": "mocha --recursive test/"
     },
     "keywords": [
         "pushi",
@@ -34,7 +43,8 @@
     },
     "devDependencies": {
         "eslint": "^9.17.0",
-        "eslint-config-hive": "^0.7.0"
+        "eslint-config-hive": "^0.7.0",
+        "mocha": "^10.8.2"
     },
     "engines": {
         "node": ">=18"
