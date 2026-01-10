@@ -136,6 +136,12 @@ var Pushi = function(appKey, options) {
     this.init(appKey, options);
 };
 
+/**
+ * The version of the Pushi library.
+ * @type {string}
+ */
+Pushi.VERSION = "0.5.1";
+
 Pushi.prototype.init = function(appKey, options, callback) {
     // tries to retrieve any previously existing instance
     // of pushi for the provided key and in case it exists
