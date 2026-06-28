@@ -140,7 +140,7 @@ var Pushi = function(appKey, options) {
  * The version of the Pushi library.
  * @type {string}
  */
-Pushi.VERSION = "0.6.6";
+Pushi.VERSION = "0.6.7";
 
 Pushi.prototype.init = function(appKey, options, callback) {
     // tries to retrieve any previously existing instance
